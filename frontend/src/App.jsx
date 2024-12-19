@@ -28,16 +28,63 @@ const App = () => {
   const [mapInstance, setMapInstance] = useState(null);
   const [markers, setMarkers] = useState([]);
 
+  // Fetch markers from backend on load
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/markers/")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched markers:", data);
+        setMarkers(data);
+      })
+      .catch((error) => console.error("Error fetching markers:", error));
+  }, []);
+
   const handleMapClick = (e) => {
-    console.log("Map clicked:", e.latlng);
+    if (!e.latlng) {
+      console.error("latlng is undefined:", e);
+      return;
+    }
     const { lat, lng } = e.latlng;
     const name = prompt("Enter a name for this marker:");
+  
     if (name) {
       const newMarker = { name, latitude: lat, longitude: lng };
-      setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
-      console.log("New marker added:", newMarker);
+  
+      fetch("http://127.0.0.1:8000/api/markers/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMarker),
+      })
+        .then((response) => response.json())
+        .then((savedMarker) => {
+          console.log("Marker saved:", savedMarker);
+          setMarkers((prevMarkers) => [...prevMarkers, savedMarker]);
+        })
+        .catch((error) => console.error("Error saving marker:", error));
     }
   };
+
+  const deleteMarker = (id) => {
+    console.log(`Attempting to delete marker with ID: ${id}`);
+    console.log(`DELETE URL: http://127.0.0.1:8000/api/markers/${id}/`);
+  
+    fetch(`http://127.0.0.1:8000/api/markers/${id}/`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("Marker deleted successfully:", id);
+          setMarkers((prevMarkers) =>
+            prevMarkers.filter((marker) => marker.id !== id)
+          );
+        } else {
+          console.error("Failed to delete marker:", response.status, response.statusText);
+        }
+      })
+      .catch((error) => console.error("Error deleting marker:", error));
+  };
+  
+  
 
   useEffect(() => {
     if (mapInstance) {
@@ -80,9 +127,13 @@ const App = () => {
         style={{ height: '100vh', width: '100%' }}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {markers.map((marker, index) => (
-          <Marker key={index} position={[marker.latitude, marker.longitude]}>
-            <Popup>{marker.name}</Popup>
+        {markers.map((marker) => (
+          <Marker key={marker.id} position={[marker.latitude, marker.longitude]}>
+            <Popup>
+              {marker.name}
+              <br />
+              <button onClick={() => deleteMarker(marker.id)}>Delete</button>
+            </Popup>
           </Marker>
         ))}
         <MapController onMapReady={setMapInstance} />

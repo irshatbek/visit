@@ -1,7 +1,10 @@
 from django.urls import path
-from map_app.views import MarkerListAPIView, MarkerDetailAPIView
+from .views import MarkerListAPIView, MarkerDetailAPIView
 
 urlpatterns = [
-    path('api/markers/', MarkerListAPIView.as_view(), name='marker_list'),  # For GET and POST
-    path('api/markers/<int:pk>/', MarkerDetailAPIView.as_view(), name='marker_detail'),  # For DELETE
+    # Endpoint for listing and creating markers
+    path('markers/', MarkerListAPIView.as_view(), name='marker_list'),
+
+    # Endpoint for retrieving, updating, and deleting a specific marker
+    path('markers/<int:pk>/', MarkerDetailAPIView.as_view(), name='marker_detail'),
 ]
